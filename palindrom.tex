@@ -1,0 +1,286 @@
+\documentclass[12pt,a4paper]{article}
+
+\usepackage[T1]{fontenc}
+\usepackage[utf8]{inputenc}
+\usepackage[czech]{babel}
+\usepackage{xfrac}
+\usepackage{color}
+\usepackage{listings}
+
+\author{Tomáš Krejčí \\
+tomas789@gmail.com}
+\title{Nejdelší palindrom}
+
+\definecolor{gray}{rgb}{0.5,0.5,0.5}
+
+\lstset{
+	numbers=left,  
+	numberstyle=\tiny\color{gray},	
+	basicstyle=\scriptsize}
+
+\begin{document}
+
+\maketitle
+
+\section{Zadání}
+
+Úkolem je vyšetřit délku nejdelšího palindromického podřetězce vstupního řetězce v čase lineárním vzhledem k počtu znaků vstupního řetězce.
+
+\section{Definice}
+
+O řetězci řekneme, že je \textbf{palindromický}, pokud se čte z obou stran stejně. To znamená, že je symetrický podle svého středu. Pokud je řetězec liché délky, rozumíme středem prostřední písmeno. V případě sudého řetězce je středem mezera mezi znaky na pozici $\lfloor \frac{n}{2} \rfloor$ a $\lfloor \frac{n}{2} \rfloor + 1$, kde $n$ je délka vstupního řetězce.
+
+V následujícím textu budeme jako \emph{content} označovat vstupní řetězec a \emph{len} bude jeho délka.
+
+Pokud budeme indexovat pole, budeme tak dělat od nuly a to i v textu. To znamená, že v řetězci \textit{ABCD} je prvek na nulté pozici písmeno \textit{A}.
+
+\section{Řešení}
+
+\subsection{Naivní algoritmus}
+
+\label{naivni}
+
+Princip tohoto řešení je vzít všechny možné podřetězce vstupního řetězce a otestovat, zda-li jsou to palindromy.
+
+Vstupní řetězec má celkem ${n \choose 2}$ podřetězců. Vybraný řetězec umíme ověřit, zda je palindromem v lineárním čase vzhledem k délce testovaného podřetězce. Dohromady algoritmus pracuje v čase $O(n^3)$.
+
+Implementace tohoto algoritmu je ukázána v příloze A na straně \pageref{prilohaA}.
+
+\subsection{Kvadratické vylepšení}
+
+Algoritmus popsaný v sekci \ref{naivni} (str. \pageref{naivni}) není příliš vhodný zejména z důvodu, že vybírá všechny možné podřetězce a těch je kvadraticky mnoho.
+
+Možným vylepšením je namísto přes podřetězce iterovat hlavní cyklus algoritmu přes jednotlivé středy palindromů kterých je celkem $2n+1$ a expandovat zkoumanou oblast na obě strany dokud je u řetězce zachována vlastnost býti palindromem.
+
+Jak již bylo řečeno výše, všech možných středů je lineárně mnoho a pro každé ověření nejdelšího palindromu okolo daného středu je potřeba až lineárně mnoho práce v případě překrývajících se palindromů (např. delší posloupnost tvořená jedním znakem). To znamená celkovou složitost $O(n^2)$. Poukažme ještě na skutečnost, že v případě nepřekrývajících se palindromů je složitost lineární.
+
+Implementace algoritmu je opět k nalezení v příloze \ref{kvadraticky} na straně \pageref{kvadraticky}.
+
+\subsubsection{Poznámky k implementaci.} 
+
+Vnější \emph{for} cyklus iteruje přes jednotlivé potenciální středy palindromu. Pokud je proměnná \emph{i} přes kterou se cyklus iteruje sudá, značí to, že aktuálně ukazuje na písmeno. V opačném případě na mezeru mezi písmeny.
+
+Algoritmus pomocí proměnných \emph{ukLevy} a \emph{ukPravy} ukazuje na konce palindromu. 
+
+Před zehájením iterací \emph{while} cyklu je třeba nastavit vhodně počáteční proměnné. Počáteční nastavení ukazuje Obrázek \ref{inicializace-promennych}. Proměnná \emph{curr} obsahuje velikost aktuálního palindromu.
+
+\begin{figure}[h!]
+\centering
+\begin{tabular}{|c|c|c|c|}
+\hline 
+ & \emph{curr} & \emph{ukLevy} & \emph{ukPravy} \\ 
+\hline 
+\textbf{Středem je písmeno} & 1 & $\frac{i}{2} - 1$ & $ukLevy + 2$ \\ 
+\hline 
+\textbf{Středem je mezera} & 0 & $\frac{i-1}{2}$ & $ukLevy + 1$ \\ 
+\hline 
+\end{tabular}  
+\caption{Inicializace proměnných}
+\label{inicializace-promennych}
+\end{figure}
+
+\pagebreak
+
+\subsection{Lineární algoritmus (úprava)}
+
+\subsubsection{Algoritmus}
+
+\begin{lstlisting}[language=pascal]
+nastav stred aktualniho superpalindromu na prvni pismenko;
+nastav velikost palindromu se stredem v prvnim pismenku na 1;
+for i := 1 to 2*N+1 do begin
+	if stred i je uvnitr superpalindromu then begin
+		if leva hrana symetrickeho palindromu presahuje 
+		   levou hranu superpalindromu then begin
+			nastav velikost palindromu se stredem v i na velikost
+			symetrickeho palindromu nalezici do superpalindromu;
+		end else begin
+			nastav velikost palindromu se stredem v i na velikost
+			symetrickeho palindromu;
+			continue;
+		end;
+	end;
+		
+	while rozsireni palindromu se stredem i je stale palindrom do
+		inkrementuj velikost palindromu se stredem v i;
+		if je to prvni palindrom, ktery se podival na 
+		   novy znak vstupu then begin
+			oznac tento palindrom jako novy superpalindrom;
+		end;
+	begin 
+end;
+
+return max(d[1], d[2], ..., d[2*N+1]);
+\end{lstlisting}
+
+\subsubsection{Důkaz správnosti}
+
+Předpokládejme, že výše zmíněný kvadratický algoritmus je správný (triviální - ověřuje všechny možnosti). Lineární algoritmus vznikne tak, že předtím, než začneme expandovat okolo středu, podíváme se, zda-li je uvnitř nějakého většího palindromu. Pakliže uvnitř většího palindromu je, podíváne se na symetrický protějšek, který musí být nutně shodný resp. jeho část uvnitř většího palindromu. V případě, že ho přesahuje, tak pokračujeme expanzi. Odebrali jsme z algoritmu tedy pouze kroky, které již byly jednou počítány a správnost zůstane zachována.
+
+\subsubsection{Důkaz časové složitosti}
+
+Algoritmus je lineární vzhledem k počtu znaků vstupního řetězce, protože naždý znak ze vstupu ne nahlédnut maximálně konstantně krát (dvakrát) a každý z prvků pole $d$ je doplněn právě jednou.
+
+
+%\subsection{Lineární algoritmus}
+
+%Nejprve zaveďme značení hodnova $d[s]$ bude značit délku nejdelšího palindromu se středem v bodě (písmenu resp. mezeře) $s$. Pod pojmem \emph{superpalindrom} budeme rozumět palindrom překrývající aktuálně zkoumaný palindrom. Takový bude v každou chvíli právě jeden (průběžně se bude měnit).
+
+%Pointou tohoto algoritmu je pouze odstranění redundance z předchozího algoritmu. 
+
+%Předpokládejme, že jsme již kolem středu $s$ našli palindrom délky $d[s]$. Budeme mu říkat superpalindrom. Když algoritmus skončí s prohledáváním tohoto středu, přesune ukazatel na aktuální střed o jednu pozoci dále a opět se pokusí expandovat co možná největší palindrom. Nyní předpokládejme, že jsme o $i$ středů vzdálení od středu superpalindromu s pozice $s+i$ (tedy poloha aktuálního středu) se nachází uvnitř superpalindromu. Nyní mohou nastat dvě situace:
+
+%\begin{itemize}
+%\item \emph{Největší palindrom okolo pozice $s+i$ se nechází celý v superpalindromu.}
+%V tomto případě se nám stačí podívat, jak dopadl jeho protějšek symetricky dle středu superpalindromu. Nastavíme tedy $d[s+i] := d[s-i]$ (hodnota $d[s-i]$ je v tuto chvíli již známá).
+%\item \emph{Největší palindrom okolo pozice $s+i$ se dotýká nebo překračuje hranici superpalindromu.} Tento palindrom nemusíme prohledávat od začátku, ale začneme s takovou velikostí, aby se palindrom dotýkal pravého okraje superpalindromu a pokračujeme v expanzi. Takovýto palindrom v další iteraci algoritmu označíme jako nový superpalindrom.
+%\end{itemize}
+
+%Délku nejdelšího superpalindromu zjistíme tak, že projdeme celé pole $d$ a nalezneme v něm největší hodnotu, která je požadovaným výsledkem.
+
+%Uvedeným postupem jsme odstranili skrytou nadbytečnost v kvadratickém algoritmu. Tento postup je validní, protože jsme neodebrali žádný případ, který byl vyšetřován v kvadratickém algoritmu. Pouze jsme chytře využili již známých údajů.
+
+%Algoritmus pracuje v lineárním čase vzhledem k délce vstupního řetězce protože každý znak vstupu vyšetřuje maximálně konstantně-krát (dvakrát) a protože každý prvek pole $d$ vyplňujeme právě jednou.
+
+\appendix
+
+\pagebreak
+
+\section{Naivní algoritmus}
+\label{prilohaA}
+
+\begin{lstlisting}[language=c]
+#include <stdio.h>
+#include <string.h>
+
+#define MAX_INPUT 500
+
+int main(int argc, const char * argv[])
+{
+    char content[MAX_INPUT];
+    FILE * pFile;
+    size_t len;
+    int max = 0; 
+    int i, j, ukLevy, ukPravy;
+    
+    if (2 != argc)
+    {
+        printf("Usage: palindrome <filename>");
+        return 1;
+    }
+                
+    pFile = fopen(argv[1], "r");
+    fscanf(pFile, "%s", content);
+        
+    len = strlen(content);
+    
+    for (i = 0; i < len; i++)
+    {
+        for (j = i; j < len; j++)
+        {
+            ukLevy = i;
+            ukPravy = j;
+            
+            while (content[i] == content[j])
+            {
+                if (ukPravy - ukPravy <= 1)
+                {
+                    if (j-i > max) max = j-i;
+                    break;
+                }
+                else ++ukLevy, ++ukPravy;
+            }
+        }
+    }
+    
+    printf("%d\n", max);
+
+    return 0;
+}
+
+\end{lstlisting}
+
+\pagebreak
+
+\section{Kvadratický algoritmus}
+
+\label{kvadraticky}
+
+\begin{lstlisting}[language=c]
+#include <stdio.h>
+#include <string.h>
+
+#define MAX_INPUT 500
+
+int isLetter(int i);
+
+int main(int argc, const char * argv[])
+{
+    char content[MAX_INPUT];
+    FILE * pFile;
+    size_t len;
+    int max;
+    int i, curr, ukLevy, ukPravy;
+    
+    if (2 != argc)
+    {
+        printf("Usage: palindrome <filename>");
+        return 1;
+    }
+                
+    pFile = fopen(argv[1], "r");
+    fscanf(pFile, "%s", content);
+        
+    len = strlen(content);
+    max = 0;
+    
+    /* i%2 == 0 -> je to pismeno */
+    /* i%2 == 1 -> je to mezera */
+    
+    for (i = 0; i < 2*len + 1; i++)
+    {
+        if (isLetter(i))
+        {
+            ukLevy = i / 2 - 1;
+            ukPravy = ukLevy + 2;
+            curr = 1;
+        }
+        else
+        {
+            ukLevy = (i - 1) / 2;
+            ukPravy = ukLevy + 1;
+            curr = 0;
+        }
+        
+        if (curr > max) max = curr;
+        
+        while (ukLevy >= 0 && ukPravy < len)
+        {
+            if (content[ukLevy] == content[ukPravy])
+            {
+                curr += 2;
+                --ukLevy;
+                ++ukPravy;
+                if (curr > max) max = curr;
+            }
+            else
+            {
+                break;
+            }
+        }
+    }
+    
+    printf("%d\n", max);
+
+    return 0;
+}
+
+/* Is it letter or space? */
+inline int isLetter(int i)
+{
+    return i % 2 == 0;
+}
+
+\end{lstlisting}
+
+\end{document}
